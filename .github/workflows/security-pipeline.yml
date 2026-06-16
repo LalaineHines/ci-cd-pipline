@@ -1,0 +1,77 @@
+name: Secure CI/CD Pipeline
+
+on:
+    push:
+        branches:
+            - main
+            - develop
+
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    security_checks:
+        runs-on: ubuntu-latest
+
+        steps:
+
+        - name: Checkout Repository
+          uses: actions/checkout@v4
+
+        - name: Set Up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+
+        - name: Install Dependencies
+          run: |
+            python -m pip install --upgrade pip
+
+            if [ -f requirements.txt ]; then
+              pip install -r requirements.txt
+            fi
+
+            pip install pytest
+            pip install flake8
+            pip install bandit
+            pip install safety
+
+        - name: Lint Code
+          run: |
+            flake8 src --count --statistics
+
+        - name: Run Unit Tests
+          run: |
+            pytest tests -v
+
+        - name: Static Security Scan (Bandit)
+          run: |
+            bandit -r src -f txt
+
+        - name: Dependencies Vulnerability Scan
+          run: |
+            safety scan
+
+        - name: Generate Security Report
+          run: |
+            python scripts/report_generator.py
+
+        - name: Upload Security Report
+          uses: actions/upload=artifact@v4
+          with:
+            name: security report
+            path: reports/
+
+    secret-scan:
+        runs-on: ubuntu-latest
+
+        steps:
+
+        - name: Checkout Repository
+          uses: actions/checkout@v4
+
+        - name: TruffleHog Secret Scan
+          uses: trufflesecurity/trufflehog@main
+          with:
+            path: ./
