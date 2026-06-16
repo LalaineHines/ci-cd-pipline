@@ -15,7 +15,7 @@ def test_add_employee():
     employee = manager.get_employee(1001)
 
     assert employee["name"] == "Alice Johnson"
-    assert employee["department"] == "Security Operations
+    assert employee["department"] == "Security Operations"
     
 
 def test_total_employees():
